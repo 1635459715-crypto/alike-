@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0, minimum-scale=0.5">
+  <title>整点时钟大作战 · 三钟齐落选正确</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #f9e7b3 0%, #ffcf8a 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Comic Sans MS', '幼圆', 'YouYuan', 'Fredoka', sans-serif;
+      padding: 20px;
+      margin: 0;
+      position: relative;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+
+    /* 可爱装饰云朵 */
+    .cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 80% 20% 70% 30% / 60% 50% 50% 40%;
+      box-shadow: 0 15px 30px rgba(255, 255, 200, 0.5);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .cloud1 {
+      width: 180px;
+      height: 90px;
+      top: 20px;
+      left: 10px;
+    }
+
+    .cloud2 {
+      width: 220px;
+      height: 100px;
+      bottom: 15px;
+      right: 15px;
+      background: rgba(255, 250, 240, 0.8);
+      border-radius: 70% 30% 60% 40% / 50% 60% 40% 50%;
+    }
+
+    .game-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 750px;
+      background: rgba(255, 251, 235, 0.8);
+      backdrop-filter: blur(15px);
+      border-radius: 70px 70px 60px 60px;
+      box-shadow: 0 30px 50px rgba(180, 100, 30, 0.25), inset 0 2px 15px rgba(255, 255, 200, 0.8);
+      padding: 25px 20px 35px;
+      border: 4px solid #fff3d6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    /* 顶部答案区域 - 12:00 格式 */
+    .answer-section {
+      background: #fffaec;
+      border: 4px dashed #fba76f;
+      border-radius: 100px;
+      padding: 15px 35px;
+      margin-bottom: 25px;
+      box-shadow: 0 12px 20px rgba(251, 140, 50, 0.3);
+      background: radial-gradient(circle at 30% 30%, #fff3cb, #ffe0a3);
+      display: flex;
+      align-items: center;
+      gap: 25px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .answer-label {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #b45f2a;
+      text-shadow: 2px 2px 0 white;
+      letter-spacing: 3px;
+      background: #ffeecc;
+      padding: 5px 20px;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .target-hour-display {
+      font-size: 5.5rem;
+      font-weight: 800;
+      background: white;
+      color: #d44c2f;
+      padding: 10px 35px;
+      border-radius: 70px;
+      box-shadow: inset 0 -6px 0 #f1b07e, 0 12px 18px rgba(0,0,0,0.15);
+      font-family: 'Fredoka', 'Comic Sans MS', 'Courier New', monospace;
+      line-height: 1.2;
+      min-width: 200px;
+      text-align: center;
+      letter-spacing: 3px;
+    }
+
+    .score-area {
+      background: #b1d8b7;
+      border-radius: 50px;
+      padding: 10px 30px;
+      color: #2d5e3b;
+      font-size: 1.8rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 0 #6f9e7c;
+      background: #c7e9b0;
+      border: 2px solid #fefae0;
+    }
+
+    .score-area span {
+      font-size: 2.5rem;
+      background: white;
+      border-radius: 30px;
+      padding: 0 18px;
+      color: #c44f1c;
+    }
+
+    /* 游戏画布 */
+    .canvas-wrapper {
+      background: #b0e0f0;
+      background-image: radial-gradient(circle at 20px 20px, #c2edff 5%, #9ac9db 90%);
+      border-radius: 90px;
+      box-shadow: inset 0 0 35px #6d9eb0, 0 20px 30px rgba(72, 107, 107, 0.5);
+      border: 5px solid #fef7e0;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      max-width: 550px;
+      margin: 5px auto 20px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      touch-action: none;
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 5px;
+    }
+
+    .cute-btn {
+      background: #ffb347;
+      border: none;
+      background: #ffb85c;
+      font-size: 1.7rem;
+      font-weight: bold;
+      color: #5c2e00;
+      padding: 14px 28px;
+      border-radius: 50px;
+      box-shadow: 0 9px 0 #c16f1a, 0 10px 15px rgba(0,0,0,0.2);
+      border: 3px solid #ffe5b9;
+      transition: all 0.07s ease;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 2px;
+    }
+
+    .cute-btn:active {
+      transform: translateY(5px);
+      box-shadow: 0 4px 0 #c16f1a, 0 8px 12px rgba(0,0,0,0.2);
+    }
+
+    .cute-btn.reset-btn {
+      background: #fadcd9;
+      color: #b3404a;
+      box-shadow: 0 9px 0 #c07b7b;
+      border-color: #ffefed;
+    }
+
+    .feedback-message {
+      font-size: 1.6rem;
+      margin-top: 10px;
+      min-height: 50px;
+      font-weight: bold;
+      color: #4b2e1a;
+      background: #feeac1;
+      padding: 8px 25px;
+      border-radius: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    @media (max-width: 500px) {
+      .target-hour-display {
+        font-size: 4rem;
+        padding: 8px 25px;
+        min-width: 160px;
+      }
+      .cute-btn {
+        font-size: 1.4rem;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="cloud cloud1"></div>
+<div class="cloud cloud2"></div>
+
+<div class="game-container">
+  <!-- 上方答案：12:00 格式 -->
+  <div class="answer-section">
+    <div class="answer-label">🕐 找到整点</div>
+    <div class="target-hour-display" id="targetHourDisplay">12:00</div>
+    <div class="score-area">⭐ <span id="scoreValue">0</span></div>
+  </div>
+
+  <!-- 画布：三个时钟慢慢落下 -->
+  <div class="canvas-wrapper">
+    <canvas id="gameCanvas" aria-label="三个时钟降落游戏，点击与上面时间匹配的整点时钟"></canvas>
+  </div>
+
+  <div class="control-buttons">
+    <button class="cute-btn" id="newRoundBtn"><span>🔄</span> 新一轮</button>
+    <button class="cute-btn reset-btn" id="resetGameBtn"><span>🌟</span> 重新开始</button>
+  </div>
+  <div class="feedback-message" id="feedbackMessage">✨ 点击和上面时间一样的时钟吧！</div>
+</div>
+
+<script>
+  (function() {
+    // ---------- 游戏核心参数 ----------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // UI元素
+    const targetHourDisplay = document.getElementById('targetHourDisplay');
+    const scoreSpan = document.getElementById('scoreValue');
+    const feedbackDiv = document.getElementById('feedbackMessage');
+
+    // 画布逻辑尺寸
+    const LOGIC_SIZE = 550;
+    canvas.width = LOGIC_SIZE;
+    canvas.height = LOGIC_SIZE;
+
+    // 当前目标整点 (1-12)
+    let targetHour = 12;
+
+    // 三个时钟数组
+    let clocks = [];
+
+    // 撒花粒子数组
+    let confettiParticles = [];
+
+    // 游戏状态
+    let score = 0;
+    let gameActive = true;
+    let animationFrameId = null;
+
+    // ---------- 辅助函数 ----------
+    function randomHour() {
+      return Math.floor(Math.random() * 12) + 1;
+    }
+
+    // 格式化小时为 HH:00 显示
+    function formatHourDisplay(hour) {
+      const hourStr = hour.toString().padStart(2, '0');
+      return hourStr + ':00';
+    }
+
+    // 生成新目标并更新显示
+    function generateNewTarget() {
+      targetHour = randomHour();
+      targetHourDisplay.textContent = formatHourDisplay(targetHour);
+    }
+
+    // 生成三个时钟，确保其中至少有一个正确时钟
+    function spawnThreeClocks() {
+      const newClocks = [];
+      const correctIndex = Math.floor(Math.random() * 3);
+
+      for (let i = 0; i < 3; i++) {
+        let hour;
+        if (i === correctIndex) {
+          hour = targetHour;
+        } else {
+          do {
+            hour = randomHour();
+          } while (hour === targetHour);
+        }
+
+        const xPos = LOGIC_SIZE * 0.2 + i * LOGIC_SIZE * 0.3;
+        const yPos = 70 + Math.random() * 40;
+
+        newClocks.push({
+          hour: hour,
+          x: xPos,
+          y: yPos,
+          radius: 50,
+          speed: 0.45 + Math.random() * 0.5,
+          active: true,
+          isCorrect: hour === targetHour
+        });
+      }
+      clocks = newClocks;
+    }
+
+    // 更新分数UI
+    function updateScoreUI() {
+      scoreSpan.textContent = score;
+    }
+
+    // 显示反馈
+    function setFeedback(text, isGood = true) {
+      feedbackDiv.innerHTML = isGood ? `🎉 ${text}` : `😲 ${text}`;
+      feedbackDiv.style.color = isGood ? '#2d5e3b' : '#b13e3e';
+      if (window.feedbackTimer) clearTimeout(window.feedbackTimer);
+      window.feedbackTimer = setTimeout(() => {
+        feedbackDiv.innerHTML = '✨ 点击和上面时间一样的时钟吧！';
+        feedbackDiv.style.color = '#4b2e1a';
+      }, 2000);
+    }
+
+    // ---------- 撒花特效系统 ----------
+    function createConfetti(x, y) {
+      const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff922b', '#ff6eb4', '#a29bfe', '#fd79a8'];
+      for (let i = 0; i < 60; i++) {
+        confettiParticles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 1.5) * 10 - 3,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.3,
+          life: 1.0,
+          decay: 0.012 + Math.random() * 0.02,
+          gravity: 0.15
+        });
+      }
+    }
+
+    function updateConfetti() {
+      for (let i = confettiParticles.length - 1; i >= 0; i--) {
+        const p = confettiParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.rotation += p.rotationSpeed;
+        p.life -= p.decay;
+        if (p.life <= 0) {
+          confettiParticles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawConfetti(ctx) {
+      for (const p of confettiParticles) {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rotation);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        ctx.restore();
+      }
+    }
+
+    // 处理正确点击
+    function handleCorrectClick(clock) {
+      if (!gameActive || !clock.active) return;
+
+      score += 10;
+      updateScoreUI();
+      createConfetti(clock.x, clock.y);
+      setFeedback('太棒了！ +10分！🎊', true);
+
+      generateNewTarget();
+      spawnThreeClocks();
+      gameActive = true;
+    }
+
+    // 处理错误点击
+    function handleWrongClick(clickedHour) {
+      if (!gameActive) return;
+
+      score = Math.max(0, score - 5);
+      updateScoreUI();
+      const clickedTime = formatHourDisplay(clickedHour);
+      setFeedback(`这是 ${clickedTime}，再试试看！ -5分`, false);
+
+      const wrongClock = clocks.find(c => c.hour === clickedHour && c.active);
+      if (wrongClock) {
+        wrongClock.active = false;
+        setTimeout(() => {
+          if (wrongClock) wrongClock.active = true;
+        }, 1000);
+      }
+    }
+
+    // 重置游戏
+    function resetGame() {
+      score = 0;
+      updateScoreUI();
+      generateNewTarget();
+      spawnThreeClocks();
+      gameActive = true;
+      confettiParticles = [];
+      setFeedback('新游戏！加油哟～', true);
+      if (window.feedbackTimer) clearTimeout(window.feedbackTimer);
+    }
+
+    // ---------- 绘制时钟 ----------
+    function drawClock(ctx, clock) {
+      const { x, y, radius, hour } = clock;
+      if (!clock.active) {
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+      }
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+
+      // 表盘
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#fffef0';
+      ctx.fill();
+      ctx.strokeStyle = '#d49b6a';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      // 内圈
+      ctx.beginPath();
+      ctx.arc(x, y, radius - 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff9e6';
+      ctx.fill();
+      ctx.strokeStyle = '#f7c894';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      // 绘制数字
+      ctx.font = 'bold 15px "Comic Sans MS", "Fredoka", "幼圆"';
+      ctx.fillStyle = '#5c3b1f';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 1; i <= 12; i++) {
+        let angle = (i - 3) * (Math.PI / 6);
+        let numX = x + Math.cos(angle) * (radius - 16);
+        let numY = y + Math.sin(angle) * (radius - 16);
+        ctx.fillText(i.toString(), numX, numY);
+      }
+
+      // 分针（指向12点方向）
+      let minuteAngle = -Math.PI / 2;
+      let minuteLength = radius * 0.65;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(minuteAngle) * minuteLength, y + Math.sin(minuteAngle) * minuteLength);
+      ctx.strokeStyle = '#d94f4f';
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 时针（指向整点）
+      let hourAngle = (hour - 3) * (Math.PI / 6);
+      let hourLength = radius * 0.48;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(hourAngle) * hourLength, y + Math.sin(hourAngle) * hourLength);
+      ctx.strokeStyle = '#2c3e50';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // 中心点
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = '#f39c12';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.restore();
+
+      if (!clock.active) {
+        ctx.restore();
+      }
+    }
+
+    // 绘制场景
+    function drawScene() {
+      ctx.clearRect(0, 0, LOGIC_SIZE, LOGIC_SIZE);
+
+      // 装饰小星星
+      ctx.fillStyle = '#ffffffb0';
+      for (let i = 0; i < 8; i++) {
+        let sx = 30 + i * 65;
+        let sy = 25 + Math.sin(i * 1.5) * 8;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 绘制时钟
+      for (const clock of clocks) {
+        drawClock(ctx, clock);
+      }
+
+      // 绘制撒花
+      drawConfetti(ctx);
+    }
+
+    // 更新逻辑
+    function update() {
+      if (!gameActive) return;
+
+      for (const clock of clocks) {
+        if (clock.active) {
+          clock.y += clock.speed;
+        }
+      }
+
+      let allFallen = true;
+      for (const clock of clocks) {
+        if (clock.y - clock.radius < LOGIC_SIZE + 20) {
+          allFallen = false;
+          break;
+        }
+      }
+
+      if (allFallen && clocks.length > 0) {
+        score = Math.max(0, score - 5);
+        updateScoreUI();
+        setFeedback('时钟都溜走了… -5分', false);
+        generateNewTarget();
+        spawnThreeClocks();
+      }
+
+      updateConfetti();
+    }
+
+    // 动画循环
+    function gameLoop() {
+      update();
+      drawScene();
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    // ---------- 点击检测 ----------
+    function handleCanvasClick(e) {
+      if (!gameActive) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = LOGIC_SIZE / rect.width;
+      const scaleY = LOGIC_SIZE / rect.height;
+
+      let clientX, clientY;
+      if (e.touches) {
+        if (e.touches.length === 0) return;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+        e.preventDefault();
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      const logicX = (clientX - rect.left) * scaleX;
+      const logicY = (clientY - rect.top) * scaleY;
+
+      for (let i = clocks.length - 1; i >= 0; i--) {
+        const clock = clocks[i];
+        if (!clock.active) continue;
+
+        const dx = logicX - clock.x;
+        const dy = logicY - clock.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist <= clock.radius + 10) {
+          if (clock.hour === targetHour) {
+            handleCorrectClick(clock);
+          } else {
+            handleWrongClick(clock.hour);
+          }
+          break;
+        }
+      }
+    }
+
+    // 绑定事件
+    function bindEvents() {
+      canvas.addEventListener('click', handleCanvasClick);
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleCanvasClick(e);
+      }, { passive: false });
+
+      document.getElementById('newRoundBtn').addEventListener('click', () => {
+        if (!gameActive) gameActive = true;
+        generateNewTarget();
+        spawnThreeClocks();
+        confettiParticles = [];
+        setFeedback('新的一轮！加油~', true);
+      });
+
+      document.getElementById('resetGameBtn').addEventListener('click', () => {
+        resetGame();
+      });
+
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    // 初始化
+    function initGame() {
+      targetHour = 12;
+      targetHourDisplay.textContent = formatHourDisplay(targetHour);
+      score = 0;
+      updateScoreUI();
+      spawnThreeClocks();
+      gameActive = true;
+      confettiParticles = [];
+      feedbackDiv.innerHTML = '✨ 点击和上面时间一样的时钟吧！';
+      feedbackDiv.style.color = '#4b2e1a';
+
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      gameLoop();
+    }
+
+    window.addEventListener('beforeunload', () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    });
+
+    bindEvents();
+    initGame();
+  })();
+</script>
+</body>
+</html>
